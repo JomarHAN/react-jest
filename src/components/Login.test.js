@@ -1,5 +1,16 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import Login from "./login/Login"
+
+jest.mock('axios', () => ({
+
+    __esModule: true,
+
+    default: {
+        get: () => ({
+            data: { id: 1, name: 'John' }
+        })
+    }
+}))
 
 test('username input should be rendered', () => {
     render(<Login />)
@@ -87,4 +98,34 @@ test('Button should be rendered Loading when clicking', () => {
     fireEvent.click(buttonInputEl)
 
     expect(buttonInputEl).toHaveTextContent('please wait')
+})
+
+test('Loading not rendered after fetching', async () => {
+    render(<Login />)
+    const buttonInputEl = screen.getByRole('button')
+    const userInputEl = screen.getByPlaceholderText(/username/i)
+    const passwordInputEl = screen.getByPlaceholderText(/password/i)
+    const testValue = 'test'
+
+    fireEvent.change(userInputEl, { target: { value: testValue } })
+    fireEvent.change(passwordInputEl, { target: { value: testValue } })
+    fireEvent.click(buttonInputEl)
+
+    await waitFor(() => expect(buttonInputEl).not.toHaveTextContent('please wait'))
+})
+
+test('username input should be rendered after fetching', async () => {
+    render(<Login />)
+    const buttonInputEl = screen.getByRole('button')
+    const userInputEl = screen.getByPlaceholderText(/username/i)
+    const passwordInputEl = screen.getByPlaceholderText(/password/i)
+    const testValue = 'test'
+
+    fireEvent.change(userInputEl, { target: { value: testValue } })
+    fireEvent.change(passwordInputEl, { target: { value: testValue } })
+    fireEvent.click(buttonInputEl)
+
+    const username = await screen.findByText('John')
+
+    expect(username).toBeInTheDocument()
 })
